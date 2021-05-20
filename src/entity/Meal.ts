@@ -1,5 +1,6 @@
-import { Entity, Column, } from 'typeorm';
+import { Entity, Column, OneToMany, } from 'typeorm';
 import BaseEntity from './base/BaseEntity';
+import UserMealRecordEntry from './UserMealRecordEntry';
 
 @Entity()
 class Meal extends BaseEntity {
@@ -8,6 +9,9 @@ class Meal extends BaseEntity {
 
     @Column()
     info: string;
+
+    @OneToMany(() => UserMealRecordEntry, 'meal')
+    foodItems: UserMealRecordEntry[];
 }
 
 export default Meal;

@@ -5,6 +5,7 @@ import Fooddata from '../../entity/Fooddata';
 import Meal from '../../entity/Meal';
 import UserFoodRecord from '../../entity/UserFoodRecord';
 import UserFoodRecordEntry from '../../entity/UserFoodRecordEntry';
+import UserMealRecordEntry from '../../entity/UserMealRecordEntry';
 import { AuthenticatedRequest } from '../auth/authController';
 
 interface IFoodsResponse {
@@ -103,10 +104,15 @@ export const createMeal: RequestHandler = async (
     res: Response,
 ) => {
     const mealRepository = getRepository(Meal);
-    const newMeal = {
+    const userMealRecordEntryRepository = getRepository(UserMealRecordEntry);
+    const newMeal = mealRepository.create({
         name: req.body.name,
         info: req.body.info,
-    };
+        foodItems: req.body.foodItems.map((foodItem) => userMealRecordEntryRepository.create({
+            amount: foodItem.amount,
+            foodDataId: foodItem.foodOption,
+        })),
+    });
     try {
         const meal = await mealRepository.save(newMeal);
         return res.status(StatusCodes.CREATED).json(meal);
