@@ -168,3 +168,4 @@ export const authenticateRequest: RequestHandler = (
     res.status(StatusCodes.UNAUTHORIZED).send();
   }
 };
+
