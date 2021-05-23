@@ -1,8 +1,8 @@
 version: '3.4'
 
 services:
-  meetmethere-be:
-    image: meetmethere-be
+  food-diary-be:
+    image: food-diary-be
     network_mode: host
     build:
       context: .
@@ -10,3 +10,9 @@ services:
     env_file: .env
     ports:
       - 5000:5000
+    networks:
+      - dev_net
+
+networks:
+  dev_net:
+    external: true

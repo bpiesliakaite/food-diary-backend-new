@@ -10,7 +10,7 @@ class Meal extends BaseEntity {
     @Column()
     info: string;
 
-    @OneToMany(() => UserMealRecordEntry, 'meal')
+    @OneToMany(() => UserMealRecordEntry, 'meal', { cascade: true })
     foodItems: UserMealRecordEntry[];
 }
 

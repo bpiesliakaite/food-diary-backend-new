@@ -72,15 +72,16 @@ export const login: RequestHandler<
       .cookie('accessToken', accessToken, {
         httpOnly: true,
         sameSite: 'none',
-        secure: true
+        // secure: true
       })
       .cookie('refreshToken', refreshToken, {
         httpOnly: true,
         sameSite: 'none',
-        secure: true
+        // secure: true
       })
       .send();
   } catch (error) {
+    console.log(error);
     if (error instanceof EntityNotFoundError) {
       return res.status(StatusCodes.UNAUTHORIZED).send('Invalid credentials.');
     }
