@@ -29,6 +29,43 @@ export const getFoodByGroup: RequestHandler = async (
     return res.status(StatusCodes.OK).json({ foods });
 }
 
+export const createUserFoodMealRecordEntry: RequestHandler = async (
+    req: AuthenticatedRequest,
+    res: Response,
+) => {
+    const userFoodRecordRepository = getRepository(UserFoodRecord);
+    let userFoodRecord = await userFoodRecordRepository.findOne({
+        where: {
+            mealType: req.body.mealType,
+            userId: req.user.id,
+        }
+    });
+    if (!userFoodRecord) {
+        userFoodRecord = userFoodRecordRepository.create({
+            mealType: req.body.mealType,
+            userId: req.user.id
+        });
+        await userFoodRecordRepository.save(userFoodRecord);
+    }
+    const userFoodRecordEntryRepository = getRepository(UserFoodRecordEntry);
+    const newUserFoodRecordEntry = userFoodRecordEntryRepository.create({
+        amount: req.body.amount,
+        userFoodRecord: userFoodRecord,
+        userMealRecordId: req.body.meal,
+    });
+    await userFoodRecordEntryRepository.save(newUserFoodRecordEntry);
+
+    const newFood = await userFoodRecordEntryRepository.findOne(newUserFoodRecordEntry.id, {
+        relations: ['userMealRecord']
+    });
+
+    return res.status(StatusCodes.CREATED).json({
+        meal: newFood.userMealRecord,
+        mealType: userFoodRecord.mealType,
+        amount: newFood.amount
+    });
+}
+
 export const createUserFoodRecordEntry: RequestHandler = async (
     req: AuthenticatedRequest,
     res: Response,
@@ -76,15 +113,17 @@ export const getUserFoodRecordEntries: RequestHandler = async (
     const userFood = await userFoodRecordEntryRepository.createQueryBuilder('entry')
         .leftJoinAndSelect('entry.foodData', 'foodData')
         .leftJoinAndSelect('entry.userFoodRecord', 'userFoodRecord')
+        .leftJoinAndSelect('entry.userMealRecord', 'userMealRecord')
         .where('userFoodRecord.userId = :userId', { userId: req.user.id })
         .getMany();
 
     return res.status(StatusCodes.OK).json({
         userFood: userFood.map(entry => ({
-            food: entry.foodData.food,
-            group: entry.foodData.group,
+            food: entry.foodData?.food,
+            group: entry.foodData?.group,
             mealType: entry.userFoodRecord.mealType,
             amount: entry.amount,
+            meal: entry.userMealRecord
         }))
     });
 
