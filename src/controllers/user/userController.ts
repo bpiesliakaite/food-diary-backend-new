@@ -65,7 +65,7 @@ export const changePassword: RequestHandler = async (
 
     const updatedUser = await userRepository.save({
       ...user,
-      password: req.body.newPassword
+      password: hashPassword(req.body.newPassword)
     });
 
     return res.status(StatusCodes.OK).json(updatedUser);
