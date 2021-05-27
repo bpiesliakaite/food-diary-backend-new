@@ -2,6 +2,7 @@ import { RequestHandler, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { EntityNotFoundError, getRepository } from 'typeorm';
 import User from '../../entity/User';
+import hashPassword from '../../utils/hashPassword';
 import { AuthenticatedRequest } from '../auth/authController';
 
 interface IUserResponse {
@@ -42,6 +43,32 @@ export const updateUser: RequestHandler = async (
 
     return res.status(StatusCodes.OK).json(updatedUser);
 
+  } catch (error) {
+    if (error instanceof EntityNotFoundError) {
+      return res.status(StatusCodes.NOT_FOUND).send();
+    }
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send();
+  }
+}
+
+export const changePassword: RequestHandler = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const userRepository = getRepository(User);
+    const user = await userRepository.createQueryBuilder('user')
+      .where('user.id = :userId', { userId: req.user.id })
+      .andWhere('user.password = :password', { password: hashPassword(req.body.currentPassword) })
+      .getOneOrFail()
+    ;
+
+    const updatedUser = await userRepository.save({
+      ...user,
+      password: req.body.newPassword
+    });
+
+    return res.status(StatusCodes.OK).json(updatedUser);
   } catch (error) {
     if (error instanceof EntityNotFoundError) {
       return res.status(StatusCodes.NOT_FOUND).send();

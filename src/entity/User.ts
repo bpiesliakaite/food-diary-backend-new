@@ -1,4 +1,4 @@
-import { Entity, Column, BeforeInsert } from 'typeorm';
+import { Entity, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
 import BaseEntity from './base/BaseEntity';
 import hashPassword from '../utils/hashPassword';
 
@@ -38,6 +38,7 @@ class User extends BaseEntity {
   password: string;
 
   @BeforeInsert()
+  @BeforeUpdate()
   hashPassword(): void {
     this.password = hashPassword(this.password);
   }
