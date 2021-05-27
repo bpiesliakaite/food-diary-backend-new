@@ -44,7 +44,8 @@ export const createUserFoodMealRecordEntry: RequestHandler = async (
     if (!userFoodRecord) {
         userFoodRecord = userFoodRecordRepository.create({
             mealType: req.body.mealType,
-            userId: req.user.id
+            userId: req.user.id,
+            date: new Date(),
         });
         await userFoodRecordRepository.save(userFoodRecord);
     }
@@ -71,6 +72,7 @@ export const createUserFoodRecordEntry: RequestHandler = async (
     req: AuthenticatedRequest,
     res: Response,
 ) => {
+        console.log(req.body);
     const userFoodRecordRepository = getRepository(UserFoodRecord);
     let userFoodRecord = await userFoodRecordRepository.findOne({
         where: {
