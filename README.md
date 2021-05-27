@@ -5,4 +5,4 @@ Migrations are run automatically when the server is started. To generate a migra
 ```sh
 npm run typeorm migration:generate -- -n MigrationName
 ```
-**Note**: Make sure to have correct configuration in [ormconfig.json](./ormconfig.json). This configuration is used to compare code with the actual state of the database.
+**Note**: Make sure to have correct configuration in [database.js]. This configuration is used to compare code with the actual state of the database.
