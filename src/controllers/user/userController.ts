@@ -26,3 +26,26 @@ export const getSelf: RequestHandler = async (
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send();
   }
 };
+
+export const updateUser: RequestHandler = async (
+  req: AuthenticatedRequest,
+  res: Response<User>
+) => {
+  try {
+    const userRepository = getRepository(User);
+    const user = await userRepository.findOneOrFail(req.user.id);
+
+    const updatedUser = await userRepository.save({
+      ...user,
+      ...req.body
+    });
+
+    return res.status(StatusCodes.OK).json(updatedUser);
+
+  } catch (error) {
+    if (error instanceof EntityNotFoundError) {
+      return res.status(StatusCodes.NOT_FOUND).send();
+    }
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send();
+  }
+}
