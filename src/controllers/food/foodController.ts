@@ -1,5 +1,6 @@
 import { RequestHandler, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { startOfDay, endOfDay, format } from 'date-fns';
 import { getRepository } from 'typeorm';
 import Fooddata from '../../entity/Fooddata';
 import Meal from '../../entity/Meal';
@@ -70,7 +71,6 @@ export const createUserFoodRecordEntry: RequestHandler = async (
     req: AuthenticatedRequest,
     res: Response,
 ) => {
-    console.log(req.body);
     const userFoodRecordRepository = getRepository(UserFoodRecord);
     let userFoodRecord = await userFoodRecordRepository.findOne({
         where: {
@@ -81,7 +81,8 @@ export const createUserFoodRecordEntry: RequestHandler = async (
     if (!userFoodRecord) {
         userFoodRecord = userFoodRecordRepository.create({
             mealType: req.body.mealType,
-            userId: req.user.id
+            userId: req.user.id,
+            date: new Date(),
         });
         await userFoodRecordRepository.save(userFoodRecord);
     }
@@ -110,11 +111,14 @@ export const getUserFoodRecordEntries: RequestHandler = async (
     res: Response,
 ) => {
     const userFoodRecordEntryRepository = getRepository(UserFoodRecordEntry);
+    const date = req.query.date as string;
     const userFood = await userFoodRecordEntryRepository.createQueryBuilder('entry')
         .leftJoinAndSelect('entry.foodData', 'foodData')
         .leftJoinAndSelect('entry.userFoodRecord', 'userFoodRecord')
         .leftJoinAndSelect('entry.userMealRecord', 'userMealRecord')
         .where('userFoodRecord.userId = :userId', { userId: req.user.id })
+        .andWhere('entry.createDate >= :startDate', { startDate: startOfDay(new Date(date)).toISOString()})
+        .andWhere('entry.createDate < :endDate', { endDate: endOfDay(new Date(date)).toISOString()})
         .getMany();
 
     return res.status(StatusCodes.OK).json({
