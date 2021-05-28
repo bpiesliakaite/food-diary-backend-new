@@ -2,7 +2,7 @@
    "type": "mysql",
    "host": "localhost",
    "port": 32769,
-   "database": "idfk",
+   "database": "food-diary-db-4",
    "username": "root",
    "password": "root",
    "entities": [

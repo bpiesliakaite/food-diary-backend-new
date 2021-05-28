@@ -19,7 +19,7 @@ export const getSelf: RequestHandler = async (
     const user = await userRepository.findOneOrFail(req.user.id);
     return res
       .status(StatusCodes.OK)
-      .json({ email: user.email, createDate: user.createDate });
+      .json(user);
   } catch (error) {
     if (error instanceof EntityNotFoundError) {
       return res.status(StatusCodes.NOT_FOUND).send();
