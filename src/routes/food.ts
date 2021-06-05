@@ -18,10 +18,10 @@ router.post('/createMealEntry', authenticateRequest, createUserFoodMealRecordEnt
 router.all('/createMealEntry', notAllowedHandler);
 
 // router.get('/meals', authenticateRequest, getMeals);
-router.get('/meals', getMeals);
-router.post('/meals', createMeal);
-router.put('/meals/:id', editMeal);
-router.delete('/meals/:id', deleteMeal);
+router.get('/meals', authenticateRequest, getMeals);
+router.post('/meals', authenticateRequest, createMeal);
+router.put('/meals/:id', authenticateRequest, editMeal);
+router.delete('/meals/:id', authenticateRequest, deleteMeal);
 // router.all('/meals', notAllowedHandler);
 
 export default router;
