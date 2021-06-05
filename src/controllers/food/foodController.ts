@@ -250,7 +250,6 @@ export const getMeals: RequestHandler = async (
         })))
     })));
 
-    console.log(result[0].foodItems[0].foodComposition);
     return res.status(StatusCodes.OK).json({ meals: result });
 }
 
@@ -273,7 +272,18 @@ export const createMeal: RequestHandler = async (
             })),
         });
         const meal = await mealRepository.save(newMeal);
-        return res.status(StatusCodes.CREATED).json(meal);
+
+        const refreshedMeal = await mealRepository.findOne(meal.id, {
+            relations: ['foodItems', 'foodItems.foodData']
+        });
+        const result = {
+            ...refreshedMeal,
+            foodItems: await Promise.all(refreshedMeal.foodItems.map(async (foodItem) => ({
+                ...foodItem,
+                foodComposition: await calculateFooddataComposition(foodItem),
+            })))
+        }
+        return res.status(StatusCodes.CREATED).json(result);
     } catch (exception) {
         console.log(exception);
     }
