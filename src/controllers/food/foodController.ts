@@ -139,12 +139,13 @@ export const getUserFoodRecordEntries: RequestHandler = async (
     const userFood = await userFoodRecordEntryRepository.createQueryBuilder('entry')
         .leftJoinAndSelect('entry.foodData', 'foodData')
         .leftJoinAndSelect('entry.userFoodRecord', 'userFoodRecord')
+        .withDeleted()
         .leftJoinAndSelect('entry.userMealRecord', 'userMealRecord')
         .leftJoinAndSelect('userMealRecord.foodItems', 'userMealRecordFoodItems')
         .leftJoinAndSelect('userMealRecordFoodItems.foodData', 'userMealRecordFoodItemsFooddata')
         .where('userFoodRecord.userId = :userId', { userId: req.user.id })
-        .andWhere('entry.createDate >= :startDate', { startDate: startOfDay(new Date(date)).toISOString()})
-        .andWhere('entry.createDate < :endDate', { endDate: endOfDay(new Date(date)).toISOString()})
+        .andWhere('entry.createDate >= :startDate', { startDate: startOfDay(new Date(date)).toISOString() })
+        .andWhere('entry.createDate < :endDate', { endDate: endOfDay(new Date(date)).toISOString() })
         .getMany();
 
     const result = {
@@ -163,7 +164,7 @@ export const getUserFoodRecordEntries: RequestHandler = async (
 
 const calculateFooddataComposition = async (entry: UserFoodRecordEntry | UserMealRecordEntry): Promise<FoodRecordEntryNutritions> => {
     const foodCompositionRepository = getRepository(Fooddatacomposition);
-    
+
     if (entry instanceof UserFoodRecordEntry && entry.userMealRecord) {
         let totalFoodComposition: FoodRecordEntryNutritions = {
             KCALS: 0,
@@ -188,7 +189,7 @@ const calculateFooddataComposition = async (entry: UserFoodRecordEntry | UserMea
                 ])
                 .where('food.foodName LIKE :name', { name: `%${entry.userMealRecord.foodItems[i].foodData.food}%` })
                 .getOne();
-            
+
             totalFoodComposition = {
                 KCALS: totalFoodComposition.KCALS + (entry.amount * ((parseFloat(foodDataComposition.kcals) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
                 PROT: totalFoodComposition.PROT + (entry.amount * ((parseFloat(foodDataComposition.prot) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
@@ -205,7 +206,7 @@ const calculateFooddataComposition = async (entry: UserFoodRecordEntry | UserMea
         }
         return totalFoodComposition;
 
-    } else {
+    } else if (entry.foodData) {
         const foodDataComposition = await foodCompositionRepository
             .createQueryBuilder('food')
             .select([
@@ -237,12 +238,12 @@ export const getMeals: RequestHandler = async (
 ) => {
     const mealRepository = getRepository(Meal);
     const meals = await mealRepository
-    .createQueryBuilder('m')
-    .where('m.userId = :userId', { userId: req.user.id })
-    .leftJoinAndSelect('m.foodItems', 'mealRecords')
-    .leftJoinAndSelect('mealRecords.foodData', 'foodData')
-    // .leftJoinAndSelect('mealRecord.foodDataId', 'fooddata')
-    .getMany();
+        .createQueryBuilder('m')
+        .where('m.userId = :userId', { userId: req.user.id })
+        .leftJoinAndSelect('m.foodItems', 'mealRecords')
+        .leftJoinAndSelect('mealRecords.foodData', 'foodData')
+        // .leftJoinAndSelect('mealRecord.foodDataId', 'fooddata')
+        .getMany();
 
     const result = await Promise.all(meals.map(async (meal) => ({
         ...meal,
@@ -301,7 +302,7 @@ export const editMeal: RequestHandler = async (
     const id = parseInt(req.params.id);
     const meal = await mealRepository.findOne(id);
     try {
-        const foodItems = await userMealRecordEntryRepository.find({meal: meal});
+        const foodItems = await userMealRecordEntryRepository.find({ meal: meal });
         foodItems.map((foodItem) => {
             userMealRecordEntryRepository.remove(foodItem);
         })
@@ -319,15 +320,15 @@ export const editMeal: RequestHandler = async (
                     }),
                 }
             }
-            
-            
+
+
         );
         const updatedMeal = await mealRepository
-        .createQueryBuilder('m')
-        .where('m.id = :mealId', { mealId: id })
-        .leftJoinAndSelect('m.foodItems', 'mealRecords')
-        .leftJoinAndSelect('mealRecords.foodData', 'foodData')
-        .getOne();
+            .createQueryBuilder('m')
+            .where('m.id = :mealId', { mealId: id })
+            .leftJoinAndSelect('m.foodItems', 'mealRecords')
+            .leftJoinAndSelect('mealRecords.foodData', 'foodData')
+            .getOne();
 
         const result = await {
             ...updatedMeal,
