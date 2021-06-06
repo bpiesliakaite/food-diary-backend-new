@@ -1,6 +1,7 @@
-import { Entity, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
+import { Entity, Column, BeforeInsert, BeforeUpdate, OneToMany } from 'typeorm';
 import BaseEntity from './base/BaseEntity';
 import hashPassword from '../utils/hashPassword';
+import Meal from './Meal';
 
 export enum PhysicalTraining {
   Average = 'Average',
@@ -36,6 +37,9 @@ class User extends BaseEntity {
 
   @Column({ select: false })
   password: string;
+
+  @OneToMany(() => Meal, 'user')
+  meals: Meal[];
 
   @BeforeInsert()
   @BeforeUpdate()
