@@ -60,14 +60,16 @@ export const createUserFoodMealRecordEntry: RequestHandler = async (
     await userFoodRecordEntryRepository.save(newUserFoodRecordEntry);
 
     const newFood = await userFoodRecordEntryRepository.findOne(newUserFoodRecordEntry.id, {
-        relations: ['userMealRecord']
+        relations: ['userMealRecord', 'userMealRecord.foodItems', 'userMealRecord.foodItems.foodData']
     });
-
-    return res.status(StatusCodes.CREATED).json({
+    const result = await {
         meal: newFood.userMealRecord,
         mealType: userFoodRecord.mealType,
-        amount: newFood.amount
-    });
+        amount: newFood.amount,
+        foodComposition: await calculateFooddataComposition(newFood)
+    };
+
+    return res.status(StatusCodes.CREATED).json(result);
 }
 
 export const createUserFoodRecordEntry: RequestHandler = async (
@@ -188,17 +190,17 @@ const calculateFooddataComposition = async (entry: UserFoodRecordEntry | UserMea
                 .getOne();
             
             totalFoodComposition = {
-                KCALS: totalFoodComposition.KCALS + ((parseFloat(foodDataComposition.kcals) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                PROT: totalFoodComposition.PROT + ((parseFloat(foodDataComposition.prot) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                FAT: totalFoodComposition.FAT + ((parseFloat(foodDataComposition.fat) / 100) || 0) * entry.userMealRecord.foodItems[i].amount,
-                CHO: totalFoodComposition.CHO + ((parseFloat(foodDataComposition.cho) / 100) || 0) * entry.userMealRecord.foodItems[i].amount,
-                TOTSUG: totalFoodComposition.TOTSUG + ((parseFloat(foodDataComposition.totsug) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                VITC: totalFoodComposition.VITC + ((parseFloat(foodDataComposition.vitc) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                VITB6: totalFoodComposition.VITB6 + ((parseFloat(foodDataComposition.vitb6) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                K: totalFoodComposition.K + ((parseFloat(foodDataComposition.k) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                CA: totalFoodComposition.CA + ((parseFloat(foodDataComposition.ca) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                MG: totalFoodComposition.MG + ((parseFloat(foodDataComposition.mg) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
-                FE: totalFoodComposition.FE + ((parseFloat(foodDataComposition.fe) || 0) / 100) * entry.userMealRecord.foodItems[i].amount,
+                KCALS: totalFoodComposition.KCALS + (entry.amount * ((parseFloat(foodDataComposition.kcals) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                PROT: totalFoodComposition.PROT + (entry.amount * ((parseFloat(foodDataComposition.prot) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                FAT: totalFoodComposition.FAT + (entry.amount * ((parseFloat(foodDataComposition.fat) / 100) || 0) * entry.userMealRecord.foodItems[i].amount),
+                CHO: totalFoodComposition.CHO + (entry.amount * ((parseFloat(foodDataComposition.cho) / 100) || 0) * entry.userMealRecord.foodItems[i].amount),
+                TOTSUG: totalFoodComposition.TOTSUG + (entry.amount * ((parseFloat(foodDataComposition.totsug) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                VITC: totalFoodComposition.VITC + (entry.amount * ((parseFloat(foodDataComposition.vitc) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                VITB6: totalFoodComposition.VITB6 + (entry.amount * ((parseFloat(foodDataComposition.vitb6) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                K: totalFoodComposition.K + (entry.amount * ((parseFloat(foodDataComposition.k) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                CA: totalFoodComposition.CA + (entry.amount * ((parseFloat(foodDataComposition.ca) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                MG: totalFoodComposition.MG + (entry.amount * ((parseFloat(foodDataComposition.mg) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
+                FE: totalFoodComposition.FE + (entry.amount * ((parseFloat(foodDataComposition.fe) || 0) / 100) * entry.userMealRecord.foodItems[i].amount),
             };
         }
         return totalFoodComposition;
@@ -326,7 +328,15 @@ export const editMeal: RequestHandler = async (
         .leftJoinAndSelect('m.foodItems', 'mealRecords')
         .leftJoinAndSelect('mealRecords.foodData', 'foodData')
         .getOne();
-        return res.status(StatusCodes.OK).json(updatedMeal);
+
+        const result = await {
+            ...updatedMeal,
+            foodItems: await Promise.all(updatedMeal.foodItems.map(async (foodItem) => ({
+                ...foodItem,
+                foodComposition: await calculateFooddataComposition(foodItem),
+            })))
+        }
+        return res.status(StatusCodes.OK).json(result);
     } catch (exception) {
         console.log(exception);
     }
